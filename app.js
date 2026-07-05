@@ -1,4 +1,4 @@
-const VERSION = '1.3.0';
+const VERSION = '1.4.0';
 const PYPI_API = 'https://pypi.org/pypi';
 const PYPI_STATS_API = 'https://pypistats.org/api/packages';
 const CORS_PROXY = 'https://pypi-proxy.c307lucas.workers.dev/?url=';
@@ -59,12 +59,15 @@ function formatDateLabel(dateStr) {
 }
 
 function getPackageFromURL() {
-  return location.hash.replace(/^#\//, '').trim() || '';
+  const hash = location.hash.replace(/^#\//, '').trim();
+  if (hash) return hash;
+  const path = location.pathname.replace(/^\//, '').replace(/\/$/, '');
+  return path || '';
 }
 
 function updateURL(name) {
   if (name) {
-    history.replaceState(null, '', `#/${encodeURIComponent(name)}`);
+    history.replaceState(null, '', `/${encodeURIComponent(name)}`);
   } else {
     history.replaceState(null, '', '/');
   }
