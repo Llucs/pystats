@@ -1,3 +1,4 @@
+const VERSION = '1.0.0';
 const PYPI_API = 'https://pypi.org/pypi';
 const PYPI_STATS_API = 'https://pypistats.org/api/packages';
 
@@ -63,21 +64,22 @@ function escapeHTML(str) {
 }
 
 function buildPackageHTML(info, recent) {
-  const totalDownloads = recent ? recent.last_day + recent.last_week + recent.last_month : null;
+  const recentData = recent && recent.data;
+  const totalDownloads = recentData ? recentData.last_day + recentData.last_week + recentData.last_month : null;
 
   let statsHTML = '';
-  if (recent) {
+  if (recentData) {
     statsHTML = `
       <div class="stat-card">
-        <div class="stat-value">${formatNumber(recent.last_day)}</div>
+        <div class="stat-value">${formatNumber(recentData.last_day)}</div>
         <div class="stat-label">Últimas 24h</div>
       </div>
       <div class="stat-card">
-        <div class="stat-value">${formatNumber(recent.last_week)}</div>
+        <div class="stat-value">${formatNumber(recentData.last_week)}</div>
         <div class="stat-label">Últimos 7 dias</div>
       </div>
       <div class="stat-card">
-        <div class="stat-value">${formatNumber(recent.last_month)}</div>
+        <div class="stat-value">${formatNumber(recentData.last_month)}</div>
         <div class="stat-label">Últimos 30 dias</div>
       </div>
       <div class="stat-card stat-card-highlight">
@@ -165,7 +167,10 @@ function buildPackageHTML(info, recent) {
 function renderChart(downloadData) {
   if (!downloadData || downloadData.length === 0) return;
 
-  const sorted = [...downloadData].sort((a, b) => a.date.localeCompare(b.date));
+  const filtered = downloadData.filter(d => d.category === 'with_mirrors');
+  if (filtered.length === 0) return;
+
+  const sorted = [...filtered].sort((a, b) => a.date.localeCompare(b.date));
   const recent = sorted.slice(-90);
 
   if (chartInstance) {
@@ -336,6 +341,8 @@ async function handleSearch(query) {
     }
   }
 }
+
+document.getElementById('versionDisplay').textContent = `v${VERSION}`;
 
 searchForm.addEventListener('submit', (e) => {
   e.preventDefault();
