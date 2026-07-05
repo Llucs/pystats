@@ -1,4 +1,4 @@
-const VERSION = '1.4.0';
+const VERSION = '1.5.0';
 const PYPI_API = 'https://pypi.org/pypi';
 const PYPI_STATS_API = 'https://pypistats.org/api/packages';
 const CORS_PROXY = 'https://pypi-proxy.c307lucas.workers.dev/?url=';
@@ -62,7 +62,7 @@ function getPackageFromURL() {
   const hash = location.hash.replace(/^#\//, '').trim();
   if (hash) return hash;
   const path = location.pathname.replace(/^\//, '').replace(/\/$/, '');
-  return path || '';
+  return path.replace(/^api\//, '') || '';
 }
 
 function updateURL(name) {
@@ -371,6 +371,33 @@ async function handleSearch(query) {
   }
 }
 
+async function handleAPIRequest(name) {
+  document.body.innerHTML = '<pre id="api-output">carregando...</pre>';
+  try {
+    const proxy = u => fetch(u).then(r => r.json());
+    const [pypi, recent, overall] = await Promise.all([
+      proxy(`https://pypi.org/pypi/${name}/json`),
+      proxy(`${CORS_PROXY}${encodeURIComponent(`https://pypistats.org/api/packages/${name}/recent`)}`).catch(() => null),
+      proxy(`${CORS_PROXY}${encodeURIComponent(`https://pypistats.org/api/packages/${name}/overall`)}`).catch(() => null),
+    ]);
+    const info = pypi.info;
+    const recentData = recent?.data;
+    const overallData = overall?.data?.filter(d => d.category === 'with_mirrors') || [];
+    document.getElementById('api-output').textContent = JSON.stringify({
+      name: info.name, version: info.version, summary: info.summary,
+      author: info.author || (info.author_email || '').split('<')[0].trim() || null,
+      license: info.license, python: (info.requires_python || '').replace(/>=?\s*/, ''),
+      home_page: info.home_page, dependencies: info.requires_dist?.length || 0,
+      downloads_24h: recentData?.last_day || null,
+      downloads_7d: recentData?.last_week || null,
+      downloads_30d: recentData?.last_month || null,
+      total_downloads_90d: overallData.reduce((s, d) => s + d.downloads, 0),
+    }, null, 2);
+  } catch (e) {
+    document.getElementById('api-output').textContent = `{"error":"${e.message}"}`;
+  }
+}
+
 document.getElementById('versionDisplay').textContent = `v${VERSION}`;
 
 searchForm.addEventListener('submit', (e) => {
@@ -379,9 +406,14 @@ searchForm.addEventListener('submit', (e) => {
 });
 
 const initialPkg = getPackageFromURL();
+const isAPI = location.pathname.startsWith('/api/');
 if (initialPkg) {
-  searchInput.value = initialPkg;
-  handleSearch(initialPkg);
+  if (isAPI) {
+    handleAPIRequest(initialPkg);
+  } else {
+    searchInput.value = initialPkg;
+    handleSearch(initialPkg);
+  }
 }
 
 SUGGESTIONS.forEach(name => {

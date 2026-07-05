@@ -12,8 +12,14 @@
 - Modifique o domínio/DNS sem perguntar
 - Instale pacotes npm ou similares
 
+## API
+- `pystats.cc.cd/api/{pacote}` retorna JSON com todos os dados do pacote
+- A API funciona via 404.html + detecção de path `/api/` no JS
+- A API também funciona como web UI em `pystats.cc.cd/{pacote}`
+
 ## Estrutura
-- `index.html` — estrutura da página
-- `app.js` — toda a lógica JS (fetch, render, chart)
+- `index.html` — estrutura da página (também usado como 404.html para rotas)
+- `404.html` — cópia do index.html (GitHub Pages serve pra paths desconhecidos)
+- `app.js` — toda a lógica JS (fetch, render, chart, API, roteamento)
 - `styles.css` — estilos CSS
 - Site estático puro, sem frameworks JS além do Chart.js (CDN)
