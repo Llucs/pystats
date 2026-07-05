@@ -1,7 +1,7 @@
 const VERSION = '1.1.0';
 const PYPI_API = 'https://pypi.org/pypi';
 const PYPI_STATS_API = 'https://pypistats.org/api/packages';
-const CORS_PROXY = 'https://corsproxy.io/?';
+const CORS_PROXY = 'https://pypi-proxy.c307lucas.workers.dev/?url=';
 
 const searchForm = document.getElementById('searchForm');
 const searchInput = document.getElementById('searchInput');
