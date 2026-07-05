@@ -1,4 +1,4 @@
-const VERSION = '1.2.0';
+const VERSION = '1.3.0';
 const PYPI_API = 'https://pypi.org/pypi';
 const PYPI_STATS_API = 'https://pypistats.org/api/packages';
 const CORS_PROXY = 'https://pypi-proxy.c307lucas.workers.dev/?url=';
@@ -56,6 +56,18 @@ function showSuggestions(show) {
 function formatDateLabel(dateStr) {
   const d = new Date(dateStr);
   return d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
+}
+
+function getPackageFromURL() {
+  return location.hash.replace(/^#\//, '').trim() || '';
+}
+
+function updateURL(name) {
+  if (name) {
+    history.replaceState(null, '', `#/${encodeURIComponent(name)}`);
+  } else {
+    history.replaceState(null, '', '/');
+  }
 }
 
 function escapeHTML(str) {
@@ -339,6 +351,7 @@ async function handleSearch(query) {
       renderChart(overall.data);
     }
 
+    updateURL(name);
     resultsEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
   } catch (err) {
     if (currentSearch !== name) return;
@@ -361,6 +374,12 @@ searchForm.addEventListener('submit', (e) => {
   e.preventDefault();
   handleSearch(searchInput.value);
 });
+
+const initialPkg = getPackageFromURL();
+if (initialPkg) {
+  searchInput.value = initialPkg;
+  handleSearch(initialPkg);
+}
 
 SUGGESTIONS.forEach(name => {
   const btn = document.createElement('button');
