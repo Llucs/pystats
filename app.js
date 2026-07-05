@@ -1,6 +1,7 @@
 const VERSION = '1.0.0';
 const PYPI_API = 'https://pypi.org/pypi';
 const PYPI_STATS_API = 'https://pypistats.org/api/packages';
+const CORS_PROXY = 'https://corsproxy.io/?';
 
 const searchForm = document.getElementById('searchForm');
 const searchInput = document.getElementById('searchInput');
@@ -99,11 +100,12 @@ function buildPackageHTML(info, recent) {
   }
 
   let infoGridHTML = '';
-  if (info.author) {
+  const authorName = info.author || info.author_email;
+  if (authorName) {
     infoGridHTML += `
       <div class="info-item">
         <span class="info-label">Autor</span>
-        <span class="info-value">${escapeHTML(info.author)}</span>
+        <span class="info-value">${escapeHTML(authorName.replace(/<[^>]+>/, '').trim() || authorName)}</span>
       </div>`;
   }
   if (info.home_page) {
@@ -122,6 +124,16 @@ function buildPackageHTML(info, recent) {
         <span class="info-label">Dependências</span>
         <span class="info-value">${info.requires_dist.length}</span>
       </div>`;
+  }
+  if (info.classifiers && info.classifiers.length > 0) {
+    const cats = info.classifiers.filter(c => c.startsWith('Topic ::')).map(c => c.split(' :: ').pop()).slice(0, 3);
+    if (cats.length > 0) {
+      infoGridHTML += `
+        <div class="info-item">
+          <span class="info-label">Categorias</span>
+          <span class="info-value">${cats.join(', ')}</span>
+        </div>`;
+    }
   }
   if (info.project_urls) {
     const entries = Object.entries(info.project_urls).slice(0, 3);
@@ -294,10 +306,11 @@ async function handleSearch(query) {
   }
 
   try {
+    const proxyStats = u => fetchJSON(`${CORS_PROXY}${encodeURIComponent(u)}`);
     const [pkgData, recentStats, overallStats] = await Promise.all([
       fetchJSON(`${PYPI_API}/${encodeURIComponent(name)}/json`),
-      fetchJSON(`${PYPI_STATS_API}/${encodeURIComponent(name)}/recent`).catch(() => null),
-      fetchJSON(`${PYPI_STATS_API}/${encodeURIComponent(name)}/overall`).catch(() => null),
+      proxyStats(`${PYPI_STATS_API}/${encodeURIComponent(name)}/recent`).catch(() => null),
+      proxyStats(`${PYPI_STATS_API}/${encodeURIComponent(name)}/overall`).catch(() => null),
     ]);
 
     if (currentSearch !== name) return;
